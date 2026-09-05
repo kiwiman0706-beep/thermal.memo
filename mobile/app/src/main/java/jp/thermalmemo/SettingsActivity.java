@@ -30,10 +30,13 @@ public class SettingsActivity extends Activity {
     private CheckBox cut;
     private CheckBox timestamp;
     private CheckBox history;
+    private CheckBox updateCheck;
+    private CheckBox updatePrerelease;
     private Spinner paper;
     private TextView status;
 
     private Settings settings;
+    private UpdateFlow updates;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
@@ -51,8 +54,23 @@ public class SettingsActivity extends Activity {
         cut = (CheckBox) findViewById(R.id.cut);
         timestamp = (CheckBox) findViewById(R.id.timestamp);
         history = (CheckBox) findViewById(R.id.history);
+        updateCheck = (CheckBox) findViewById(R.id.update_check);
+        updatePrerelease = (CheckBox) findViewById(R.id.update_prerelease);
         paper = (Spinner) findViewById(R.id.paper);
         status = (TextView) findViewById(R.id.status);
+
+        updates = new UpdateFlow(this);
+        updateCheck.setChecked(settings.updateCheckOnStart());
+        updatePrerelease.setChecked(settings.includePrerelease());
+        ((TextView) findViewById(R.id.version)).setText(
+                "バージョン " + Updates.currentVersion(this));
+        findViewById(R.id.check_update).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                save();
+                updates.check(false);
+            }
+        });
 
         host.setText(settings.host());
         port.setText(String.valueOf(settings.port()));
@@ -139,6 +157,15 @@ public class SettingsActivity extends Activity {
                 parse(chunkRows, 128, 8, 1024),
                 8000);
         settings.setFormat(parse(fontSize, 30, 10, 120), timestamp.isChecked(), history.isChecked());
+        settings.setUpdate(updateCheck.isChecked(), updatePrerelease.isChecked());
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (updates != null) {
+            updates.dispose();
+        }
+        super.onDestroy();
     }
 
     private void testConnection() {

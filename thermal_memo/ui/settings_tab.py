@@ -6,7 +6,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from .. import credentials, drive, fonts, mailer, printer, render
+from .. import __version__, credentials, drive, fonts, mailer, printer, render
 from ..config import PAPER_PRESETS, config_path
 from .common import ScrollableFrame, section
 
@@ -69,6 +69,8 @@ class SettingsTab(ttk.Frame):
         self.mail_success_only = tk.BooleanVar(value=mail_cfg["on_success_only"])
         self.mail_password = tk.StringVar(value="")
         self.drive_folder = tk.StringVar(value=app.cfg["drive"]["folder_id"])
+        self.check_on_start = tk.BooleanVar(value=app.cfg["update"]["check_on_start"])
+        self.include_prerelease = tk.BooleanVar(value=app.cfg["update"]["include_prerelease"])
 
         # --- プリンタ
         pr = section(body, "プリンタ（ESC/POS · RAW 9100）")
@@ -205,6 +207,21 @@ class SettingsTab(ttk.Frame):
                   foreground="#999").pack(anchor="w", pady=(2, 4))
         ttk.Label(gd, text=drive.status_text(), foreground="#777", wraplength=560,
                   justify="left").pack(anchor="w")
+
+        # --- 更新
+        up = section(body, f"更新（現在のバージョン {__version__}）")
+        ttk.Checkbutton(up, text="起動時に更新を確認する",
+                        variable=self.check_on_start).pack(anchor="w")
+        ttk.Checkbutton(up, text="事前リリース（rc / beta）も対象にする",
+                        variable=self.include_prerelease).pack(anchor="w")
+        row = ttk.Frame(up)
+        row.pack(fill="x", pady=(6, 0))
+        ttk.Button(row, text="今すぐ確認", command=self.check_updates).pack(side="left")
+        ttk.Button(row, text="スキップした版を忘れる",
+                   command=self.clear_skip).pack(side="left", padx=6)
+        self.update_status = ttk.Label(up, text=self._last_checked_text(), foreground="#777",
+                                       wraplength=560, justify="left")
+        self.update_status.pack(anchor="w", pady=(6, 0))
 
         # --- その他
         misc = section(body, "動作")
@@ -354,10 +371,34 @@ class SettingsTab(ttk.Frame):
             "on_success_only": self.mail_success_only.get(),
         })
         cfg["drive"]["folder_id"] = self.drive_folder.get().strip()
+        cfg["update"].update({
+            "check_on_start": self.check_on_start.get(),
+            "include_prerelease": self.include_prerelease.get(),
+        })
         self.app.save_config()
         self.app.refresh_preview()
         self.app.history_tab.update_sync_label()
         self.app.status("設定を保存しました", "ok")
+
+    # ---------------------------------------------------------------- 更新
+    def _last_checked_text(self) -> str:
+        last = self.app.cfg["update"].get("last_checked")
+        skipped = self.app.cfg["update"].get("skip_version")
+        parts = [f"最終確認: {last}" if last else "まだ確認していません"]
+        if skipped:
+            parts.append(f"スキップ中: {skipped}")
+        return "  /  ".join(parts)
+
+    def check_updates(self) -> None:
+        self.save()
+        self.app.updates.check(silent=False)
+        self.update_status.configure(text=self._last_checked_text())
+
+    def clear_skip(self) -> None:
+        self.app.cfg["update"]["skip_version"] = None
+        self.app.save_config()
+        self.update_status.configure(text=self._last_checked_text())
+        self.app.status("スキップ設定を解除しました", "ok")
 
     # -------------------------------------------------------------- メール
     def update_password_status(self) -> None:

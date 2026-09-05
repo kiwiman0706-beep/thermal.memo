@@ -46,6 +46,28 @@ APK は `mobile/` を含むコミットを push すると GitHub Actions が作�
 手元でビルドするなら `cd mobile && ./gradlew assembleDebug`。
 詳細は [mobile/README.md](mobile/README.md)。
 
+## インストール
+
+[リリースページ](https://github.com/kiwiman0706-beep/thermal.memo/releases/latest)
+から環境に合うものを取ってください。Python を入れなくても動きます。
+
+| 環境 | ファイル | 備考 |
+| --- | --- | --- |
+| Windows | `...-windows-setup.exe` | **管理者権限は不要**（ユーザー領域に入ります） |
+| Windows（持ち運び） | `...-windows-portable.exe` | インストール不要の単一 exe |
+| macOS (Apple Silicon) | `...-macos-arm64.dmg` | 初回は右クリック →「開く」 |
+| macOS (Intel) | `...-macos-x86_64.dmg` | 同上 |
+| Android | `...-android.apk` | 「不明なアプリのインストール」の許可が要ります |
+
+署名していないため、Windows は SmartScreen、macOS は Gatekeeper の警告が出ます
+（[docs/RELEASE.md](docs/RELEASE.md) に回避手順）。
+
+**更新は自動です。** 起動時に GitHub Releases を確認し、新しい版があれば知らせます。
+ダウンロードしたファイルは `SHA256SUMS.txt` と突き合わせてから適用します。
+`設定 → 更新` で自動確認の有無を切り替えられます。
+
+ソースから動かす場合は下記のとおりです。
+
 ## 動作要件
 
 - Python 3.10 以降（Tkinter 同梱のもの。macOS は `brew install python-tk` が必要な場合あり）
@@ -172,6 +194,7 @@ thermal_memo/
 ├── mailer.py     自分宛アーカイブメールの組み立てと SMTP 送信
 ├── credentials.py アプリパスワードの保管（keyring / DPAPI / キーチェーン）
 ├── drive.py      Google ドライブへのアップロードとリンク取得
+├── updater.py    GitHub Releases を見て自動更新
 ├── history.py    SQLite 履歴と同期フォルダ書き出し
 ├── config.py     設定
 ├── app.py        メインウィンドウ
@@ -182,6 +205,8 @@ thermal_memo/
 python -m unittest discover -s tests -v
 ```
 
+- [CHANGELOG.md](CHANGELOG.md) — 変更履歴
+- [docs/RELEASE.md](docs/RELEASE.md) — リリースの出し方・署名・自動更新の仕組み
 - [docs/GMAIL.md](docs/GMAIL.md) — 印刷の控えを Gmail に貯める（アプリパスワード・フィルタ）
 - [docs/DRIVE_QR.md](docs/DRIVE_QR.md) — ドライブへアップして QR を貼る（OAuth 設定・共有の考え方）
 - [docs/PROTOCOL.md](docs/PROTOCOL.md) — 送っている ESC/POS バイト列の仕様

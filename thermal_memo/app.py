@@ -19,6 +19,7 @@ from .ui.image_tab import ImageTab
 from .ui.qr_tab import QrTab
 from .ui.settings_tab import SettingsTab
 from .ui.text_tab import TextTab
+from .ui.update_dialog import UpdateFlow
 
 STATUS_COLORS = {
     "info": "#333333",
@@ -105,6 +106,11 @@ class App(ttk.Frame):
         self._purge_old()
         self.refresh_preview()
         self.after(80, self._drain_results)
+
+        self.updates = UpdateFlow(self)
+        if self.cfg["update"].get("check_on_start"):
+            # 起動直後は印刷を優先したいので、少し待ってから静かに確認する
+            self.after(2500, lambda: self.updates.check(silent=True))
 
     # ------------------------------------------------------------------ 画面
     def _setup_style(self) -> None:

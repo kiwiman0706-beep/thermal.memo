@@ -62,6 +62,33 @@ public final class Settings {
         return prefs.getInt("threshold", 128);
     }
 
+    public boolean updateCheckOnStart() {
+        return prefs.getBoolean("update_check", true);
+    }
+
+    public boolean includePrerelease() {
+        return prefs.getBoolean("update_prerelease", false);
+    }
+
+    public String updateRepo() {
+        return prefs.getString("update_repo", Updates.DEFAULT_REPO);
+    }
+
+    public String skipVersion() {
+        return prefs.getString("update_skip", "");
+    }
+
+    public void setSkipVersion(String version) {
+        prefs.edit().putString("update_skip", version == null ? "" : version).apply();
+    }
+
+    public void setUpdate(boolean checkOnStart, boolean includePrerelease) {
+        prefs.edit()
+                .putBoolean("update_check", checkOnStart)
+                .putBoolean("update_prerelease", includePrerelease)
+                .apply();
+    }
+
     public boolean isConfigured() {
         return host().trim().length() > 0;
     }

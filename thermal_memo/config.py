@@ -93,6 +93,13 @@ DEFAULTS: dict[str, Any] = {
         "folder_id": "",        # 空ならマイドライブ直下
         "share_anyone": False,  # True で「リンクを知っている全員」に公開（既定オフ）
     },
+    "update": {
+        "check_on_start": True,
+        "repo": "kiwiman0706-beep/thermal.memo",
+        "include_prerelease": False,
+        "skip_version": None,     # 「この版はスキップ」で入る
+        "last_checked": None,
+    },
     "ui": {
         "last_tab": 0,
         "confirm_before_print": False,

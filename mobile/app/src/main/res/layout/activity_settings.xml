@@ -177,6 +177,37 @@
             android:layout_height="wrap_content"
             android:text="印刷履歴を残す" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="更新"
+            android:textStyle="bold" />
+
+        <CheckBox
+            android:id="@+id/update_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="起動時に更新を確認する" />
+
+        <CheckBox
+            android:id="@+id/update_prerelease"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="事前リリース（rc / beta）も対象にする" />
+
+        <Button
+            android:id="@+id/check_update"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="今すぐ更新を確認" />
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

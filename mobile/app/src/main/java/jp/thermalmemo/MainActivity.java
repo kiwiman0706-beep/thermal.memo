@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
     private static final int MENU_SETTINGS = 1;
     private static final int MENU_HISTORY = 2;
     private static final int MENU_TEST_PAGE = 3;
+    private static final int MENU_UPDATE = 4;
 
     private EditText input;
     private EditText copies;
@@ -44,6 +45,7 @@ public class MainActivity extends Activity {
     private Button printButton;
 
     private Settings settings;
+    private UpdateFlow updates;
     private Bitmap current;
     private String sharedHeader = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -127,8 +129,27 @@ public class MainActivity extends Activity {
             }
         });
 
+        updates = new UpdateFlow(this);
         handleIntent(getIntent());
         schedulePreview();
+
+        if (settings.updateCheckOnStart()) {
+            // 起動直後はメモ入力を邪魔しないよう、少し待ってから静かに確認する
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    updates.check(true);
+                }
+            }, 2500);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (updates != null) {
+            updates.dispose();
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -251,6 +272,7 @@ public class MainActivity extends Activity {
         menu.add(0, MENU_SETTINGS, 0, R.string.settings);
         menu.add(0, MENU_HISTORY, 1, R.string.history);
         menu.add(0, MENU_TEST_PAGE, 2, "テストページ");
+        menu.add(0, MENU_UPDATE, 3, "更新を確認");
         return true;
     }
 
@@ -267,6 +289,10 @@ public class MainActivity extends Activity {
         }
         if (id == MENU_TEST_PAGE) {
             printTestPage();
+            return true;
+        }
+        if (id == MENU_UPDATE) {
+            updates.check(false);
             return true;
         }
         return super.onOptionsItemSelected(item);
