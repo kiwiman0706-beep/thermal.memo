@@ -76,7 +76,7 @@ class Entry:
         return text[:limit] + ("…" if len(text) > limit else "")
 
 
-KIND_LABEL = {"text": "テキスト", "screenshot": "スクショ", "document": "ファイル"}
+KIND_LABEL = {"text": "テキスト", "screenshot": "スクショ", "document": "ファイル", "qr": "QR"}
 
 
 class History:

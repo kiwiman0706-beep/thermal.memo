@@ -84,5 +84,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install Pillow
+      # QR のデコード検証（OpenCV）まで CI で回すため、任意依存も入れる
+      - run: pip install Pillow qrcode opencv-python-headless numpy
       - run: python -m unittest discover -s tests -v

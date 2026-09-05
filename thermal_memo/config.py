@@ -68,6 +68,31 @@ DEFAULTS: dict[str, Any] = {
         "sync_dir": None,       # Google Drive などのローカル同期フォルダ
         "sync_enabled": False,
     },
+    "mail": {
+        # 印刷内容を自分宛にメールして Gmail で検索・ラベル管理する
+        "enabled": False,       # 既定オフ。患者情報を含む場合は運用方針を確認のこと
+        "host": "smtp.gmail.com",
+        "port": 465,
+        "use_ssl": True,        # 465=SSL / 587=STARTTLS
+        "username": "",
+        "from_addr": "",
+        "to_addr": "",          # 例: you+memo@gmail.com（プラスアドレスだとフィルタが楽）
+        "subject_template": "[thermal.memo] {date} {title}",
+        "attach_image": True,
+        "timeout": 20.0,
+        "on_success_only": True,  # 印刷が成功したときだけ送る
+    },
+    "qr": {
+        "size_percent": 55,
+        "error": "Q",           # L/M/Q/H。印字が薄れても読めるよう既定は Q
+        "font_size": 24,
+        "caption_url": True,    # QR の下に URL 文字列も印字（手入力の保険）
+        "timestamp": True,
+    },
+    "drive": {
+        "folder_id": "",        # 空ならマイドライブ直下
+        "share_anyone": False,  # True で「リンクを知っている全員」に公開（既定オフ）
+    },
     "ui": {
         "last_tab": 0,
         "confirm_before_print": False,

@@ -45,6 +45,23 @@ def _tokenize(line: str) -> list[str]:
     return tokens
 
 
+def _split_long_token(token: str, width_of, max_width: int) -> list[str]:
+    """1 語で行幅を超えるトークン（長い URL など）を文字単位で割る。"""
+    if width_of(token) <= max_width:
+        return [token]
+    pieces: list[str] = []
+    current = ""
+    for char in token:
+        if current and width_of(current + char) > max_width:
+            pieces.append(current)
+            current = char
+        else:
+            current += char
+    if current:
+        pieces.append(current)
+    return pieces
+
+
 def wrap_text(
     text: str,
     font,
@@ -66,7 +83,10 @@ def wrap_text(
             lines.append("")
             continue
         current = ""
+        tokens: list[str] = []
         for token in _tokenize(raw_line):
+            tokens.extend(_split_long_token(token, width_of, max_width))
+        for token in tokens:
             candidate = current + token
             if current and width_of(candidate) > max_width:
                 # 禁則: 次行の先頭に来る文字が行頭禁則なら、はみ出しを許して現在行に残す

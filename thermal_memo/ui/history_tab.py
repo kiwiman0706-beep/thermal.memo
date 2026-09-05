@@ -12,7 +12,8 @@ from PIL import Image
 
 from ..history import KIND_LABEL, Entry
 
-KIND_CHOICES = {"すべて": "", "テキスト": "text", "スクショ": "screenshot", "ファイル": "document"}
+KIND_CHOICES = {"すべて": "", "テキスト": "text", "スクショ": "screenshot",
+                "ファイル": "document", "QR": "qr"}
 from .common import section
 
 

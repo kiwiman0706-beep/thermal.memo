@@ -2,6 +2,7 @@
 Pillow>=10.0            # 画像生成・二値化（テキストの画像化にも使用）
 
 # --- 任意（無くても該当機能だけ無効化されて動きます）---
+qrcode>=7.4             # QR コードの生成（QR タブ）
 PyMuPDF>=1.23           # PDF サムネイル & テキスト抽出（推奨）
 pdfplumber>=0.10        # PDF テキスト抽出のフォールバック
 python-docx>=1.1        # .docx テキスト抽出
@@ -9,3 +10,8 @@ opencv-python>=4.8      # 適応的二値化（adaptive threshold）
 numpy>=1.24             # 画像パック高速化 / opencv 連携
 pytesseract>=0.3        # 画像PDF・スクショの OCR（Tesseract 本体も必要）
 tkinterdnd2>=0.4        # ウィンドウへのファイル D&D
+keyring>=24.0           # アプリパスワードの保管（Win/Mac は無くても OS 機能を使います）
+
+# --- Google ドライブ連携を使う場合のみ ---
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.1

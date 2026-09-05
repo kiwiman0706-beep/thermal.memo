@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import queue
 import threading
 import tkinter as tk
@@ -9,12 +10,13 @@ from tkinter import messagebox, ttk
 
 from PIL import Image
 
-from . import APP_NAME, __version__, config, printer
+from . import APP_NAME, __version__, config, credentials, mailer, printer
 from .history import History
 from .ui.common import PreviewPane
 from .ui.document_tab import DocumentTab
 from .ui.history_tab import HistoryTab
 from .ui.image_tab import ImageTab
+from .ui.qr_tab import QrTab
 from .ui.settings_tab import SettingsTab
 from .ui.text_tab import TextTab
 
@@ -67,9 +69,10 @@ class App(ttk.Frame):
         self.text_tab = TextTab(self.notebook, self)
         self.image_tab = ImageTab(self.notebook, self)
         self.document_tab = DocumentTab(self.notebook, self)
+        self.qr_tab = QrTab(self.notebook, self)
         self.history_tab = HistoryTab(self.notebook, self)
         self.settings_tab = SettingsTab(self.notebook, self)
-        self.tabs = [self.text_tab, self.image_tab, self.document_tab,
+        self.tabs = [self.text_tab, self.image_tab, self.document_tab, self.qr_tab,
                      self.history_tab, self.settings_tab]
         for tab in self.tabs:
             self.notebook.add(tab, text=tab.title)
@@ -93,6 +96,7 @@ class App(ttk.Frame):
         root.bind("<Control-Key-2>", lambda _e: self.notebook.select(1))
         root.bind("<Control-Key-3>", lambda _e: self.notebook.select(2))
         root.bind("<Control-Key-4>", lambda _e: self.notebook.select(3))
+        root.bind("<Control-Key-5>", lambda _e: self.notebook.select(4))
         root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         last = int(self.cfg["ui"].get("last_tab", 0))
@@ -132,8 +136,9 @@ class App(ttk.Frame):
         self._update_printer_label()
 
     def _update_printer_label(self) -> None:
+        # 用紙幅はプレビュー右上に出るので、ここは宛先だけ（狭い枠で切れないように）
         p = self.cfg["printer"]
-        self.printer_label.configure(text=f"{p['host']}:{p['port']}  {p['width_dots']}dot")
+        self.printer_label.configure(text=f"{p['host']}:{p['port']}")
 
     # ------------------------------------------------------------------ 状態
     @property
@@ -289,6 +294,40 @@ class App(ttk.Frame):
                 self.history_tab.reload()
             except Exception as exc:  # noqa: BLE001
                 self.status(f"履歴の保存に失敗: {exc}", "warn")
+
+        self._archive_by_mail(status, image, cfg, payload)
+
+    def _archive_by_mail(self, status, image, cfg, payload) -> None:
+        """印刷内容を自分宛にメールする（設定で有効なときだけ）。"""
+        mail_cfg = mailer.MailConfig.from_dict(self.cfg["mail"])
+        if not mail_cfg.enabled:
+            return
+        if mail_cfg.on_success_only and status != "ok":
+            return
+
+        png = None
+        if mail_cfg.attach_image and image is not None:
+            buffer = io.BytesIO()
+            image.convert("1").save(buffer, format="PNG", optimize=True)
+            png = buffer.getvalue()
+
+        password = credentials.retrieve(mailer.CREDENTIAL_ACCOUNT, mailer.ENV_PASSWORD) or ""
+        printer_label = f"{cfg.host}:{cfg.port}"
+
+        def worker() -> None:
+            try:
+                message = mailer.build_message(
+                    mail_cfg, title=payload["title"], body=payload["body"],
+                    kind=payload["kind"], printer=printer_label,
+                    source=payload["source"], image_png=png,
+                )
+                mailer.send(mail_cfg, message, password)
+                self.post(lambda: self.status("メールで控えを送りました", "ok"))
+            except mailer.MailError as exc:
+                # 印刷自体は成功しているので、警告にとどめる
+                self.post(lambda e=exc: self.status(f"メール送信に失敗: {e}", "warn"))
+
+        threading.Thread(target=worker, daemon=True).start()
 
     # ------------------------------------------------------------------ 連携
     def load_text(self, body: str) -> None:

@@ -71,6 +71,40 @@ class PreviewPane(ttk.Frame):
         self.canvas.configure(scrollregion=(0, 0, self.canvas.winfo_width(), size[1] + 20))
 
 
+class ScrollableFrame(ttk.Frame):
+    """縦スクロールできる入れ物。中身は :attr:`body` に置く。"""
+
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        self.body = ttk.Frame(canvas, padding=10)
+        window = canvas.create_window((0, 0), window=self.body, anchor="nw")
+
+        self.body.bind(
+            "<Configure>",
+            lambda _e: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda event: canvas.itemconfigure(window, width=event.width),
+        )
+
+        def wheel(event) -> None:
+            step = int(-event.delta / 40) or (-1 if event.delta > 0 else 1)
+            canvas.yview_scroll(step, "units")
+
+        for widget in (canvas, self.body):
+            widget.bind("<MouseWheel>", wheel)
+            widget.bind("<Button-4>", lambda _e: canvas.yview_scroll(-3, "units"))
+            widget.bind("<Button-5>", lambda _e: canvas.yview_scroll(3, "units"))
+        self.canvas = canvas
+
+
 class LabeledScale(ttk.Frame):
     """ラベル＋スライダ＋数値表示。"""
 
