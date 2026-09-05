@@ -33,11 +33,23 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-35" "build-tools;35.0.0" > /dev/null
 
-      - name: Build debug APK
+      - name: Unit tests (ESC/POS が Python 版と一致するか)
         working-directory: mobile
         run: |
           chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleDebug
+          ./gradlew --no-daemon --stacktrace testDebugUnitTest
+
+      - name: Build debug APK
+        working-directory: mobile
+        run: ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Upload test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: mobile/app/build/reports/tests/
+          if-no-files-found: ignore
 
       - name: Name the artifact
         working-directory: mobile

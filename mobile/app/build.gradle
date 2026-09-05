@@ -26,5 +26,13 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    // AndroidX を使わない素の SDK だけで組んでいるため dependencies は空
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    // アプリ本体は AndroidX を含む外部ライブラリを一切使わない。
+    // JUnit はユニットテスト専用なので APK には入らない。
+    testImplementation 'junit:junit:4.13.2'
 }
