@@ -16,6 +16,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Windows の既定コンソールは cp1252 なので、日本語を出すと落ちる。
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+
 ROOT = Path(__file__).resolve().parent.parent
 NAME = "thermal-memo"
 
@@ -54,8 +62,16 @@ def build(mode: str, icon: str | None) -> Path:
         "--specpath", str(ROOT / "build"),
     ]
     command.append("--onefile" if mode == "onefile" else "--onedir")
-    if icon and Path(icon).exists():
-        command += ["--icon", icon]
+    if icon:
+        # PyInstaller は相対パスを --specpath 基準で解決するため、必ず絶対パスで渡す
+        icon_path = Path(icon)
+        if not icon_path.is_absolute():
+            icon_path = (ROOT / icon_path).resolve()
+        if icon_path.exists():
+            command += ["--icon", str(icon_path)]
+            print(f"  アイコン: {icon_path}")
+        else:
+            print(f"  アイコンが見つかりません（省略）: {icon_path}")
 
     for module in HIDDEN_IMPORTS:
         command += ["--hidden-import", module]

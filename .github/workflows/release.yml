@@ -26,6 +26,11 @@ on:
 permissions:
   contents: write
 
+env:
+  # Windows ランナーの既定コンソールは cp1252。日本語のログで落ちないようにする
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: '1'
+
 jobs:
   version:
     name: バージョンを決める
