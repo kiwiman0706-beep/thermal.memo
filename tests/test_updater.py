@@ -97,11 +97,22 @@ class TestFetch(unittest.TestCase):
         self.assertIn("リリース", str(caught.exception))
 
     def test_rate_limit_message(self):
-        error = urllib.error.HTTPError("u", 403, "rate limited", {}, None)
+        error = urllib.error.HTTPError(
+            "u", 403, "rate limited", {"X-RateLimit-Remaining": "0"}, None)
         with mock.patch.object(updater.urllib.request, "urlopen", side_effect=error):
             with self.assertRaises(updater.UpdateError) as caught:
                 updater.fetch_latest("owner/repo")
         self.assertIn("回数制限", str(caught.exception))
+
+    def test_blocked_403_is_not_reported_as_rate_limit(self):
+        """社内プロキシ等による 403 を回数制限と誤って案内しないこと。"""
+        error = urllib.error.HTTPError("u", 403, "Forbidden", {}, None)
+        with mock.patch.object(updater.urllib.request, "urlopen", side_effect=error):
+            with self.assertRaises(updater.UpdateError) as caught:
+                updater.fetch_latest("owner/repo")
+        message = str(caught.exception)
+        self.assertNotIn("回数制限", message)
+        self.assertIn("api.github.com", message)
 
     def test_offline(self):
         error = urllib.error.URLError("no route")
@@ -139,6 +150,52 @@ class TestAssetSelection(unittest.TestCase):
     def test_android_asset_is_not_offered_to_desktop(self):
         with mock.patch.object(updater, "platform_key", return_value="linux"):
             self.assertIsNone(updater.pick_asset(self.release))
+
+
+class TestRealReleaseNaming(unittest.TestCase):
+    """公開済み v0.1.0 の実際のアセット名で選択できることを固定する。
+
+    release.yml が付けるファイル名と updater.pick_asset の判定は独立している。
+    どちらかを変えるとユーザーの手元で「更新はあるのに配布物が見つからない」に
+    なるため、実物の名前をここに焼き付けておく。
+    """
+
+    REAL_ASSETS = [
+        "SHA256SUMS.txt",
+        "thermal-memo-0.1.0-android.apk",
+        "thermal-memo-0.1.0-macos-arm64.dmg",
+        "thermal-memo-0.1.0-windows-portable.exe",
+        "thermal-memo-0.1.0-windows-setup.exe",
+    ]
+
+    def setUp(self):
+        self.release = updater.release_from_json(
+            _release_payload(tag="v0.1.0", assets=self.REAL_ASSETS))
+
+    def test_windows_finds_installer(self):
+        with mock.patch.object(updater, "platform_key", return_value="windows"):
+            asset = updater.pick_asset(self.release)
+        self.assertIsNotNone(asset, "Windows 向けの配布物が見つからない")
+        self.assertEqual(asset.name, "thermal-memo-0.1.0-windows-setup.exe")
+
+    def test_windows_finds_portable(self):
+        with mock.patch.object(updater, "platform_key", return_value="windows"):
+            asset = updater.pick_asset(self.release, prefer_installer=False)
+        self.assertEqual(asset.name, "thermal-memo-0.1.0-windows-portable.exe")
+
+    def test_apple_silicon_finds_dmg(self):
+        with mock.patch.object(updater, "platform_key", return_value="macos-arm64"):
+            asset = updater.pick_asset(self.release)
+        self.assertIsNotNone(asset, "Apple Silicon 向けの配布物が見つからない")
+        self.assertEqual(asset.name, "thermal-memo-0.1.0-macos-arm64.dmg")
+
+    def test_intel_mac_has_no_asset(self):
+        # Intel 版は配布していないので、手動更新の案内に落ちるのが正しい
+        with mock.patch.object(updater, "platform_key", return_value="macos-x86_64"):
+            self.assertIsNone(updater.pick_asset(self.release))
+
+    def test_checksums_asset_is_found(self):
+        self.assertIsNotNone(self.release.asset(updater.CHECKSUM_ASSET))
 
 
 class TestDownloadAndVerify(unittest.TestCase):

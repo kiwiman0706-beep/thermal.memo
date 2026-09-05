@@ -117,7 +117,21 @@ def fetch_latest(repo: str = DEFAULT_REPO, timeout: float = 10.0) -> Release:
         if exc.code == 404:
             raise UpdateError("まだリリースが公開されていません") from exc
         if exc.code == 403:
-            raise UpdateError("GitHub API の回数制限に達しました。しばらく待ってください") from exc
+            # 回数制限のときだけ GitHub は残数ヘッダを 0 で返す。
+            # それ以外の 403（社内プロキシの遮断など）と区別する。
+            remaining = None
+            try:
+                remaining = exc.headers.get("X-RateLimit-Remaining")
+            except AttributeError:
+                pass
+            if remaining == "0":
+                raise UpdateError(
+                    "GitHub API の回数制限に達しました。しばらく待ってください"
+                ) from exc
+            raise UpdateError(
+                "更新情報の取得を拒否されました（HTTP 403）。"
+                "社内ネットワークが api.github.com を遮断していないか確認してください"
+            ) from exc
         raise UpdateError(f"更新情報を取得できません（HTTP {exc.code}）") from exc
     except urllib.error.URLError as exc:
         raise UpdateError(f"ネットワークに接続できません: {exc.reason}") from exc
