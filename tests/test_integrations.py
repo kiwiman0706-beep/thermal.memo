@@ -23,6 +23,37 @@ def _decoder_available() -> bool:
         return False
 
 
+def _decode(image) -> str:
+    """OpenCV で QR を読む。
+
+    OpenCV の検出器はバージョンによって得手不得手があり、同じ画像でも
+    4.x では読めて 5.x では読めない（逆も）ことがある。実機のスキャナより
+    弱いので、テストが版差で落ちないよう複数の見方を試す。
+    どれか 1 つで読めれば「印刷物として読める」と判断する。
+    """
+    import cv2
+    import numpy as np
+
+    detector = cv2.QRCodeDetector()
+    candidates = [image.convert("L")]
+    candidates.append(candidates[0].resize((image.width * 2, image.height * 2)))
+
+    for candidate in candidates:
+        array = np.array(candidate)
+        value = detector.detectAndDecode(array)[0]
+        if value:
+            return value
+        try:
+            ok, values, _points, _straight = detector.detectAndDecodeMulti(array)
+        except Exception:
+            continue
+        if ok:
+            for found in values:
+                if found:
+                    return found
+    return ""
+
+
 @unittest.skipUnless(qrcodes.available(), "qrcode パッケージが無い")
 class TestQr(unittest.TestCase):
 
@@ -60,16 +91,18 @@ class TestQr(unittest.TestCase):
 
     @unittest.skipUnless(_decoder_available(), "OpenCV が無い")
     def test_printed_qr_actually_decodes(self):
-        """生成した 1bit 画像が本当に QR として読めることを確認する。"""
-        import cv2
-        import numpy as np
-
-        for percent in (40, 60, 100):
+        """印刷される 1bit 画像が本当に QR として読めることを確認する。"""
+        for percent in (30, 40, 55, 70, 100):
             image = qrcodes.make_qr(self.URL, width_dots=576, size_percent=percent,
-                                    label="紹介状", caption=self.URL, timestamp=True)
-            array = np.array(image.convert("L"))
-            value, _points, _straight = cv2.QRCodeDetector().detectAndDecode(array)
-            self.assertEqual(value, self.URL, f"size_percent={percent} で読めない")
+                                    label="", caption="", timestamp=False)
+            self.assertEqual(_decode(image), self.URL, f"size_percent={percent} で読めない")
+
+    @unittest.skipUnless(_decoder_available(), "OpenCV が無い")
+    def test_qr_still_decodes_with_label_and_caption(self):
+        """見出し・キャプションを合成しても QR 部分が壊れないこと。"""
+        image = qrcodes.make_qr(self.URL, width_dots=576, size_percent=60,
+                                label="紹介状スキャン", caption=self.URL, timestamp=True)
+        self.assertEqual(_decode(image), self.URL)
 
 
 class TestLongTokenWrapping(unittest.TestCase):

@@ -86,4 +86,5 @@ jobs:
           python-version: '3.12'
       # QR のデコード検証（OpenCV）まで CI で回すため、任意依存も入れる
       - run: pip install Pillow qrcode opencv-python-headless numpy
+      - run: python -c "import cv2, qrcode; print('opencv', cv2.__version__)"
       - run: python -m unittest discover -s tests -v
