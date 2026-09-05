@@ -26,10 +26,13 @@ def _decoder_available() -> bool:
 def _decode(image) -> str:
     """OpenCV で QR を読む。
 
-    OpenCV の検出器はバージョンによって得手不得手があり、同じ画像でも
-    4.x では読めて 5.x では読めない（逆も）ことがある。実機のスキャナより
-    弱いので、テストが版差で落ちないよう複数の見方を試す。
-    どれか 1 つで読めれば「印刷物として読める」と判断する。
+    OpenCV の検出器はページ全体を走査するため、QR の周囲にある文字の量や
+    位置で結果が変わることがある。実際 CI（日本語フォントが無く DejaVuSans に
+    フォールバックする環境）では、見出し・キャプションの描画が変わった結果
+    一部のサイズだけ読めないことがあった。QR 自体は壊れていない。
+    スマホのスキャナより弱い検出器なので、テストが環境差で落ちないよう
+    等倍・2 倍・detectAndDecodeMulti を順に試し、どれかで読めれば可とする。
+    期待値（URL の完全一致）は緩めていない。
     """
     import cv2
     import numpy as np
@@ -103,6 +106,33 @@ class TestQr(unittest.TestCase):
         image = qrcodes.make_qr(self.URL, width_dots=576, size_percent=60,
                                 label="紹介状スキャン", caption=self.URL, timestamp=True)
         self.assertEqual(_decode(image), self.URL)
+
+    @unittest.skipUnless(_decoder_available(), "OpenCV が無い")
+    def test_decodes_without_japanese_font(self):
+        """日本語フォントが無い環境（CI 相当）でも読めること。
+
+        フォントが変わると見出し・キャプションの描画が変わり、ページ全体を
+        走査する検出器の結果が変わる。実際にこの条件で 60% だけ読めず CI が
+        落ちたため、その状況を固定して回帰を防ぐ。
+        """
+        from unittest import mock
+
+        from thermal_memo import fonts
+
+        fallback = None
+        for candidate in ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                          "/usr/share/fonts/dejavu/DejaVuSans.ttf"):
+            if Path(candidate).exists():
+                fallback = candidate
+                break
+        if fallback is None:
+            self.skipTest("代替フォントが見つからない")
+
+        with mock.patch.object(fonts, "detect", return_value=fallback):
+            for percent in (40, 60, 100):
+                image = qrcodes.make_qr(self.URL, width_dots=576, size_percent=percent,
+                                        label="紹介状", caption=self.URL, timestamp=True)
+                self.assertEqual(_decode(image), self.URL, f"size_percent={percent}")
 
 
 class TestLongTokenWrapping(unittest.TestCase):
