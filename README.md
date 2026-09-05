@@ -10,6 +10,8 @@
 │ スクショ（二値化調整）   │   │ そのまま表示     │
 │ PDF/Word（サムネ/文字）  │   └──────────────┘
 └──────────────────┘   すべて履歴に残る（＋同期フォルダへ書き出し）
+
+Android 版は他アプリの「共有」から直接: 共有シート → thermal.memo → 🖨
 ```
 
 ## できること
@@ -25,6 +27,23 @@
 
 日本語は**すべて画像化して送信**しているため、プリンタ内蔵フォントやコードページに
 依存せず、外字・記号（髙﨑 ①② ㎎ ℃ 等）もそのまま印字できます。
+
+## スマホからも印刷できます（Android）
+
+[`mobile/`](mobile) に Android アプリがあります。**他アプリの「共有」から直接印刷**できます。
+
+| どこから | 挙動 |
+| --- | --- |
+| 共有シート → テキスト | メモ画面に読み込み、編集してから印刷 |
+| 文字列を選択 → メニュー | 選択したテキストをそのまま印刷（どのアプリでも） |
+| 共有シート → 画像・スクショ | 二値化を調整して印刷 |
+| 共有シート → PDF | ページを描画して印刷（ページ送り・全ページ） |
+| 共有シート → 複数画像 | 縦に連結して 1 枚として印刷 |
+
+APK は `mobile/` を含むコミットを push すると GitHub Actions が作ります
+（Actions の実行ページ → Artifacts → `thermal-memo-apk`）。
+手元でビルドするなら `cd mobile && ./gradlew assembleDebug`。
+詳細は [mobile/README.md](mobile/README.md)。
 
 ## 動作要件
 
@@ -130,8 +149,12 @@ python -m unittest discover -s tests -v
 ```
 
 - [docs/PROTOCOL.md](docs/PROTOCOL.md) — 送っている ESC/POS バイト列の仕様
-- [docs/MOBILE.md](docs/MOBILE.md) — スピンオフのスマホアプリ設計
+- [mobile/README.md](mobile/README.md) — Android 版（対応インテント・ビルド方法）
+- [docs/MOBILE.md](docs/MOBILE.md) — スマホ版の設計判断と iOS 版の方針
 - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — 印字トラブル対処
+
+Android 版の ESC/POS 生成は、Python 版と同じバイト列を吐くことを CI のユニットテストで
+突き合わせています（`mobile/app/src/test/java/jp/thermalmemo/EscPosTest.java`）。
 
 ## 注意
 
