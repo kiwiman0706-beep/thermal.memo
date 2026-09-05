@@ -39,6 +39,20 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon --stacktrace testDebugUnitTest
 
+      # テストクラスが 1 つも無くても Gradle の test タスクは成功するため、
+      # 実際に実行された件数を確認して「素通り」を防ぐ。
+      - name: Verify unit tests actually ran
+        working-directory: mobile
+        run: |
+          results=app/build/test-results/testDebugUnitTest
+          if [ ! -d "$results" ]; then
+            echo "テスト結果ディレクトリがありません: $results"
+            exit 1
+          fi
+          count=$(grep -ho 'tests="[0-9]*"' "$results"/*.xml | grep -o '[0-9]*' | paste -sd+ - | bc)
+          echo "実行したテスト数: ${count:-0}"
+          test "${count:-0}" -ge 6
+
       - name: Build debug APK
         working-directory: mobile
         run: ./gradlew --no-daemon --stacktrace assembleDebug
