@@ -56,7 +56,7 @@ APK は `mobile/` を含むコミットを push すると GitHub Actions が作�
 | Windows | `...-windows-setup.exe` | **管理者権限は不要**（ユーザー領域に入ります） |
 | Windows（持ち運び） | `...-windows-portable.exe` | インストール不要の単一 exe |
 | macOS (Apple Silicon) | `...-macos-arm64.dmg` | 初回は右クリック →「開く」 |
-| macOS (Intel) | `...-macos-x86_64.dmg` | 同上 |
+| macOS (Intel) | （配布物なし） | ソースから起動してください（[理由](docs/RELEASE.md#intel-mac-について)） |
 | Android | `...-android.apk` | 「不明なアプリのインストール」の許可が要ります |
 
 署名していないため、Windows は SmartScreen、macOS は Gatekeeper の警告が出ます

@@ -27,10 +27,23 @@ git push origin v0.2.0
 | --- | --- |
 | `thermal-memo-<ver>-windows-setup.exe` | Inno Setup 製インストーラ。**管理者権限不要**（`%LocalAppData%` に入る） |
 | `thermal-memo-<ver>-windows-portable.exe` | 単一 exe。USB で持ち運ぶ用 |
-| `thermal-memo-<ver>-macos-arm64.dmg` | Apple Silicon 向け |
-| `thermal-memo-<ver>-macos-x86_64.dmg` | Intel Mac 向け |
+| `thermal-memo-<ver>-macos-arm64.dmg` | Apple Silicon 向け（Intel Mac は対象外。下記参照） |
 | `thermal-memo-<ver>-android.apk` | Android 版（デバッグ署名） |
 | `SHA256SUMS.txt` | 自動更新時の検証に使う |
+
+## Intel Mac について
+
+GitHub が Intel 版 macOS ランナー（`macos-13`）の提供を終了したため、
+Intel Mac 向けの dmg は作っていません。該当する場合はソースから起動してください。
+
+```bash
+pip install -r requirements.txt
+python run.py
+```
+
+PyInstaller はクロスビルドに対応していないので、Intel 用の配布物が要る場合は
+Intel Mac 上で `python packaging/build.py --mode onedir` を実行するか、
+セルフホストランナーを用意することになります。
 
 ## 署名について
 

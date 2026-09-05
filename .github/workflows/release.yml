@@ -105,6 +105,9 @@ jobs:
           path: out/*
           if-no-files-found: error
 
+  # Intel Mac 向けの macos-13 ランナーは GitHub 側で提供が終了しており、
+  # ジョブがキューから動かないため対象外にしている。Intel Mac ではソースから
+  # 起動してもらう（README 参照）。復活させる場合は matrix に戻すこと。
   macos:
     name: macOS (${{ matrix.arch }})
     needs: version
@@ -114,8 +117,6 @@ jobs:
         include:
           - runner: macos-14
             arch: arm64
-          - runner: macos-13
-            arch: x86_64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -235,7 +236,7 @@ jobs:
             echo "| Windows（推奨） | \`thermal-memo-${version}-windows-setup.exe\` — 管理者権限不要のインストーラ |"
             echo "| Windows（持ち運び） | \`thermal-memo-${version}-windows-portable.exe\` — インストール不要の単一 exe |"
             echo "| macOS（Apple Silicon） | \`thermal-memo-${version}-macos-arm64.dmg\` |"
-            echo "| macOS（Intel） | \`thermal-memo-${version}-macos-x86_64.dmg\` |"
+            echo "| macOS（Intel） | 配布物なし。ソースから起動してください（README 参照） |"
             echo "| Android | \`thermal-memo-${version}-android.apk\` |"
             echo
             echo "\`SHA256SUMS.txt\` は自動更新時の検証にも使われます。"
