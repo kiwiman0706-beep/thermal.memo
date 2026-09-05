@@ -48,7 +48,7 @@ jobs:
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "リリース: ${tag} (${version})"
       - name: ソースのバージョンとタグが一致するか確認
-        if: github.ref_type == 'tag'
+        if: ${{ !contains(steps.pick.outputs.version, 'test') }}
         run: |
           source_version=$(python -c "import re,pathlib; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('thermal_memo/__init__.py').read_text()).group(1))")
           echo "thermal_memo/__init__.py: ${source_version}"
@@ -248,7 +248,10 @@ jobs:
           if gh release view "$tag" > /dev/null 2>&1; then
             gh release upload "$tag" release/* --clobber
           else
+            # タグが未作成なら、このワークフローを動かしたコミットに作る。
+            # （タグ push 権限が無い環境から workflow_dispatch で回す場合に必要）
             gh release create "$tag" release/* \
+              --target "$GITHUB_SHA" \
               --title "thermal.memo ${{ needs.version.outputs.version }}" \
               --notes-file release-notes.md
           fi
