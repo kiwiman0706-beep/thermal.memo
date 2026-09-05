@@ -9,3 +9,13 @@ dist/
 Thumbs.db
 /local_config.json
 /out/
+
+# Android
+mobile/.gradle/
+mobile/build/
+mobile/app/build/
+mobile/local.properties
+*.apk
+*.aab
+.idea/
+*.iml
